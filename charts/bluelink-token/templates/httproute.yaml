@@ -1,0 +1,18 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "bluelink-token.fullname" . }}
+  labels:
+    {{- include "bluelink-token.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+  - name: {{ .Values.ingress.gateway.name }}
+    namespace: {{ .Values.ingress.gateway.namespace }}
+  hostnames:
+  - {{ .Values.ingress.hostname }}
+  rules:
+  - backendRefs:
+    - name: {{ include "bluelink-token.fullname" . }}
+      port: {{ .Values.service.port }}
+{{- end }}

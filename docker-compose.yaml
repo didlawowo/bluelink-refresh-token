@@ -3,18 +3,17 @@ services:
     image: ghcr.io/tma84/bluelink-token:latest
     container_name: bluelink-token
     ports:
-      - "9876:9876"   # Web UI
+      - "9876:9876" # Web UI
     volumes:
-      - bluelink-data:/data   # persists token expiry info across restarts
+      - bluelink-data:/data # persists token expiry info across restarts
     environment:
-      # Vehicle brand: auto (show selector), eu_hyundai, or eu_kia
-      - BRAND=auto
-      # Bluelink credentials — required for token generation
-      - BLUELINK_USERNAME=
-      - BLUELINK_PASSWORD=
-      # evcc connection (optional) — auto-transfers the token to evcc
-      - EVCC_URL=
-      - EVCC_PASSWORD=
+      # Credentials are loaded from .envrc (see .envrc.example).
+      # Run via `task up` (recommended) or `set -a && source .envrc && set +a && docker compose up`.
+      - BRAND=${BRAND:-eu_hyundai}
+      - BLUELINK_USERNAME=${BLUELINK_USERNAME:?set BLUELINK_USERNAME in .envrc}
+      - BLUELINK_PASSWORD=${BLUELINK_PASSWORD:?set BLUELINK_PASSWORD in .envrc}
+      - EVCC_URL=${EVCC_URL:-}
+      - EVCC_PASSWORD=${EVCC_PASSWORD:-}
     command: ["/run-standalone.sh"]
     restart: unless-stopped
 

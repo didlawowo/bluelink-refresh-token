@@ -3,3 +3,6 @@ forum-post.md
 bluelink_refresh_token/
 __pycache__/
 *.pyc
+
+# Local secrets — see .envrc.example
+.envrc

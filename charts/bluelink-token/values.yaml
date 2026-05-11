@@ -1,0 +1,51 @@
+replicaCount: 1
+
+image:
+  repository: oci-storage.dc-tech.work/bluelink-token
+  pullPolicy: IfNotPresent
+  tag: ""  # defaults to .Chart.AppVersion
+
+service:
+  type: ClusterIP
+  port: 9876
+  targetPort: 9876
+
+persistence:
+  enabled: true
+  storageClass: "longhorn"
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /data
+
+config:
+  # auto | eu_hyundai | eu_kia
+  BRAND: eu_hyundai
+  EVCC_URL: ""
+
+# Sensitive values — provide via --set or a separate secret values file (never commit).
+secrets:
+  BLUELINK_USERNAME: ""
+  BLUELINK_PASSWORD: ""
+  EVCC_PASSWORD: ""
+
+# Optional: reference an externally-managed Secret instead of rendering one
+existingSecret: ""
+
+ingress:
+  enabled: true
+  hostname: bluelink.dc-tech.work
+  gateway:
+    name: traefik-gateway-global
+    namespace: kube-infra
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

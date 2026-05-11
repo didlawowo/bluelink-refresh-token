@@ -1,0 +1,22 @@
+# Copy to .envrc and fill in. Loaded by direnv and by task (dotenv).
+# Never commit .envrc — only this example file.
+
+# --- Bluelink account ---
+export BLUELINK_USERNAME="you@example.com"
+export BLUELINK_PASSWORD="changeme"
+export BRAND="eu_hyundai"   # auto | eu_hyundai | eu_kia
+
+# --- evcc (optional) ---
+export EVCC_URL=""
+export EVCC_PASSWORD=""
+
+# --- Image / registry ---
+export IMAGE_REGISTRY="oci-storage.dc-tech.work"
+export IMAGE_NAME="bluelink-token"
+export IMAGE_TAG="6.6.5"
+export IMAGE_PLATFORM="linux/amd64"
+
+# --- Helm release ---
+export HELM_RELEASE="bluelink-token"
+export HELM_NAMESPACE="bluelink-token"
+export HELM_HOSTNAME="bluelink.dc-tech.work"

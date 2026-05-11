@@ -1,0 +1,101 @@
+version: "3"
+
+# Loads .envrc (KEY=VALUE / `export KEY=VALUE` lines) so credentials stay out of
+# docker-compose.yaml and the chart values. Copy .envrc.example -> .envrc first.
+dotenv: [".envrc"]
+
+vars:
+  CHART_DIR: charts/bluelink-token
+  IMAGE_REF: "{{.IMAGE_REGISTRY}}/{{.IMAGE_NAME}}:{{.IMAGE_TAG}}"
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  check-env:
+    desc: Verify required env vars are set
+    silent: true
+    cmds:
+      - |
+        missing=0
+        for v in BLUELINK_USERNAME BLUELINK_PASSWORD IMAGE_REGISTRY IMAGE_NAME IMAGE_TAG; do
+          if [ -z "$(eval echo \$$v)" ]; then echo "missing: $v"; missing=1; fi
+        done
+        [ $missing -eq 0 ] || { echo "Copy .envrc.example to .envrc and fill it in."; exit 1; }
+
+  up:
+    desc: Run the stack locally with docker compose
+    deps: [check-env]
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: Stop the local docker compose stack
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Tail docker compose logs
+    cmds:
+      - docker compose logs -f bluelink-token
+
+  image:build:
+    desc: Build the container image for {{.IMAGE_PLATFORM}}
+    cmds:
+      - docker buildx build --platform {{.IMAGE_PLATFORM}} -t {{.IMAGE_REF}} -t {{.IMAGE_REGISTRY}}/{{.IMAGE_NAME}}:latest --load ./bluelink-token
+
+  image:push:
+    desc: Build and push the image to {{.IMAGE_REGISTRY}}
+    deps: [check-env]
+    cmds:
+      - docker buildx build --platform {{.IMAGE_PLATFORM}} -t {{.IMAGE_REF}} -t {{.IMAGE_REGISTRY}}/{{.IMAGE_NAME}}:latest --push ./bluelink-token
+
+  helm:lint:
+    desc: Lint the Helm chart
+    cmds:
+      - helm lint {{.CHART_DIR}} --set secrets.BLUELINK_USERNAME=x --set secrets.BLUELINK_PASSWORD=x
+
+  helm:template:
+    desc: Render chart locally with current .envrc values
+    deps: [check-env]
+    cmds:
+      - |
+        helm template {{.HELM_RELEASE}} {{.CHART_DIR}} \
+          --namespace {{.HELM_NAMESPACE}} \
+          --set image.repository={{.IMAGE_REGISTRY}}/{{.IMAGE_NAME}} \
+          --set image.tag={{.IMAGE_TAG}} \
+          --set config.BRAND="${BRAND}" \
+          --set config.EVCC_URL="${EVCC_URL}" \
+          --set secrets.BLUELINK_USERNAME="${BLUELINK_USERNAME}" \
+          --set secrets.BLUELINK_PASSWORD="${BLUELINK_PASSWORD}" \
+          --set secrets.EVCC_PASSWORD="${EVCC_PASSWORD}" \
+          --set ingress.hostname="${HELM_HOSTNAME}"
+
+  helm:install:
+    desc: Install / upgrade the chart on the current kube-context
+    deps: [check-env]
+    cmds:
+      - |
+        helm upgrade --install {{.HELM_RELEASE}} {{.CHART_DIR}} \
+          --namespace {{.HELM_NAMESPACE}} --create-namespace \
+          --set image.repository={{.IMAGE_REGISTRY}}/{{.IMAGE_NAME}} \
+          --set image.tag={{.IMAGE_TAG}} \
+          --set config.BRAND="${BRAND}" \
+          --set config.EVCC_URL="${EVCC_URL}" \
+          --set secrets.BLUELINK_USERNAME="${BLUELINK_USERNAME}" \
+          --set secrets.BLUELINK_PASSWORD="${BLUELINK_PASSWORD}" \
+          --set secrets.EVCC_PASSWORD="${EVCC_PASSWORD}" \
+          --set ingress.hostname="${HELM_HOSTNAME}"
+
+  helm:uninstall:
+    desc: Uninstall the chart
+    cmds:
+      - helm uninstall {{.HELM_RELEASE}} --namespace {{.HELM_NAMESPACE}}
+
+  release:
+    desc: Push image, then install/upgrade the chart
+    cmds:
+      - task: image:push
+      - task: helm:install

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bluelink-token
+description: Hyundai/Kia Bluelink refresh token generator for evcc and Home Assistant
+type: application
+version: 1.0.0
+appVersion: "6.6.5"
